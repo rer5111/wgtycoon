@@ -224,7 +224,7 @@ while running:
                 selected_building = (y_pressed - 109) // 50 + 4.1
                 if selected_building == 4.1 and Diamonds - math.floor(upgrades.get(selected_building)*(1.75**(HouseMultiplier-1))) >= 0:
                     Diamonds -= math.floor(upgrades.get(selected_building)*(1.75**(HouseMultiplier-1)))
-                    Citizens += HousesBought
+                    Citizens += HousesBought * citizens.get(selected_building)
                     HouseMultiplier += 1
                 if selected_building == 5.1 and Diamonds - math.floor(upgrades.get(selected_building)*(1.75**(GeneratorMultiplier-1)))>= 0 and Citizens + citizens.get(selected_building) * GeneratorsBought >= 0:
                     Diamonds -= math.floor(upgrades.get(selected_building)*(1.75**(GeneratorMultiplier-1)))
@@ -236,7 +236,7 @@ while running:
                     MinesMultiplier += 1
                 if selected_building == 7.1 and Diamonds - math.floor(upgrades.get(selected_building)*(1.75**(MhousesMultiplier-1))) >= 0:
                     Diamonds -= math.floor(upgrades.get(selected_building)*(1.75**(MhousesMultiplier-1)))
-                    Citizens += MhousesBought
+                    Citizens += MhousesBought * citizens.get(selected_building)
                     MhousesMultiplier += 1
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
