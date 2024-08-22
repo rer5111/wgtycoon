@@ -3,7 +3,7 @@ import sys
 import math
 import random
 import pickle
-from stats import citizens, tiles, costs, inflation, upgrades
+from stats import citizens, tiles, costs, inflation, upgrades, description_boxes
 
 try:
     open("Save_file.txt", "r")
@@ -64,6 +64,7 @@ pygame.mixer.music.set_volume(0.1)
 pygame.mixer.music.set_endevent(pygame.USEREVENT)
 # window and other baseline stuff
 screen = pygame.display.set_mode((1200, 1000), pygame.SRCALPHA)
+UI = pygame.Surface((1200, 1000), pygame.SRCALPHA)
 icon = pygame.image.load("sprites/icon.png").convert()
 pygame.display.set_caption("Watergrad tycoon")
 pygame.display.set_icon(icon)
@@ -127,9 +128,12 @@ Multiplier_amount = {
 }
 
 
-def text_draw(text, font, text_clr, text_pos):
+def text_draw(surface, text, font, text_clr, text_pos, centered):
     img = font.render(f"{text}", True, text_clr)
-    screen.blit(img, text_pos)
+    if not centered:
+        surface.blit(img, text_pos)
+    else:
+        surface.blit(img, img.get_rect(center=text_pos))
 
 
 def diamond_format(number):
@@ -142,6 +146,13 @@ def diamond_format(number):
     else:
         number = int(number)
     return f"{number}{number_names.get(power)}"
+
+
+def create_ui(coordinates_topleft, coordinates_bottomright, colour1, colour2):  # the legendary square creator
+    x, y = coordinates_topleft
+    x2, y2 = coordinates_bottomright
+    pygame.draw.rect(UI, colour2, pygame.Rect(x, y, abs(x2 - x), abs(y2 - y)))
+    pygame.draw.rect(UI, colour1, pygame.Rect(x+5, y+5, abs(x2-x-10), abs(y2-y-10)))
 
 
 def place_building(tile, building):
@@ -201,6 +212,7 @@ def sell_building(tile):
 
 while running:
     screen.fill((255, 0, 0))
+    UI.fill((0, 0, 0, 0))
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:   # Closing code
@@ -249,26 +261,46 @@ while running:
                     sell_building((y_pressed//100, x_pressed//100))
                 sell_timer = 60
 
+    XMouse, YMouse = pygame.mouse.get_pos()
+    if XMouse > 1000 and 960 > YMouse > 110:
+        Building_commented = (YMouse - 109)//50 + 4.1
+        NameDescribed = description_boxes.get(Building_commented).get("Name")
+        DescriptionDescribed = description_boxes.get(Building_commented).get("Description")
+        SizeDescribed = description_boxes.get(Building_commented).get("Size")
+        Alt_Size = (0, 0)
+        if YMouse+SizeDescribed[1] > 1000:
+            Alt_Size = (SizeDescribed[0], -SizeDescribed[1])
+            print(SizeDescribed)
+        create_ui((XMouse-SizeDescribed[0], YMouse+Alt_Size[1]), (XMouse, YMouse+SizeDescribed[1]+Alt_Size[1]), (195, 195, 195, 255), (0, 0, 0, 255))
+        text_draw(UI, NameDescribed, pygame.sysfont.SysFont("FixedSys", 35), (0, 0, 0), (XMouse - SizeDescribed[0]/2, YMouse + 20 + Alt_Size[1]), True)
+        DescriptionLines = DescriptionDescribed.split("N")
+        for n, i in enumerate(DescriptionLines):
+            text_draw(UI, i, pygame.sysfont.SysFont("FixedSys", 25), (0, 0, 0),(XMouse - SizeDescribed[0]/2, YMouse + 50 + (n*20) + Alt_Size[1]), True)
+        if Panel_state:
+            text_draw(UI, 12, pygame.sysfont.SysFont("FixedSys", 25), (0, 0, 0),(XMouse - SizeDescribed[0] + 15, YMouse + SizeDescribed[1] + Alt_Size[1] -25), False)
+
+
+
     if Panel_state:
         screen.blit(Menu0, (1000, 0))
-        text_draw(f"{diamond_format(costs.get(4.1)+inflation.get(4.1)*HousesBought)}", pygame.font.SysFont("Fixedsys", 32), (0, 0, 0), (1147, 122))
-        text_draw(f"{diamond_format(citizens.get(4.1)*HouseMultiplier)}", pygame.font.SysFont("Fixedsys", 32), (0, 0, 0), (1063, 132))
-        text_draw(f"{diamond_format(costs.get(5.1) + inflation.get(5.1) * GeneratorsBought)}",pygame.font.SysFont("Fixedsys", 32), (0, 0, 0), (1147, 172))
-        text_draw(f"{diamond_format(citizens.get(5.1) * GeneratorMultiplier)}", pygame.font.SysFont("Fixedsys", 32),(136, 0, 21), (1063, 182))
-        text_draw(f"{diamond_format(costs.get(6.1) + inflation.get(6.1) * MinesBought)}",pygame.font.SysFont("Fixedsys", 32), (0, 0, 0), (1147, 222))
-        text_draw(f"{diamond_format(citizens.get(6.1) * MinesMultiplier)}", pygame.font.SysFont("Fixedsys", 32),(136, 0, 21), (1063, 232))
-        text_draw(f"{diamond_format(costs.get(7.1) + inflation.get(7.1) * MhousesBought)}", pygame.font.SysFont("Fixedsys", 32), (0, 0, 0), (1147, 272))
-        text_draw(f"{diamond_format(citizens.get(7.1) * MhousesMultiplier)}", pygame.font.SysFont("Fixedsys", 32),(0, 0, 0), (1063, 282))
+        text_draw(screen, f"{diamond_format(costs.get(4.1)+inflation.get(4.1)*HousesBought)}", pygame.font.SysFont("Fixedsys", 32), (0, 0, 0), (1147, 122), False)
+        text_draw(screen, f"{diamond_format(citizens.get(4.1)*HouseMultiplier)}", pygame.font.SysFont("Fixedsys", 32), (0, 0, 0), (1063, 132), False)
+        text_draw(screen, f"{diamond_format(costs.get(5.1) + inflation.get(5.1) * GeneratorsBought)}",pygame.font.SysFont("Fixedsys", 32), (0, 0, 0), (1147, 172), False)
+        text_draw(screen, f"{diamond_format(citizens.get(5.1) * GeneratorMultiplier)}", pygame.font.SysFont("Fixedsys", 32),(136, 0, 21), (1063, 182), False)
+        text_draw(screen, f"{diamond_format(costs.get(6.1) + inflation.get(6.1) * MinesBought)}",pygame.font.SysFont("Fixedsys", 32), (0, 0, 0), (1147, 222), False)
+        text_draw(screen, f"{diamond_format(citizens.get(6.1) * MinesMultiplier)}", pygame.font.SysFont("Fixedsys", 32),(136, 0, 21), (1063, 232), False)
+        text_draw(screen, f"{diamond_format(costs.get(7.1) + inflation.get(7.1) * MhousesBought)}", pygame.font.SysFont("Fixedsys", 32), (0, 0, 0), (1147, 272), False)
+        text_draw(screen, f"{diamond_format(citizens.get(7.1) * MhousesMultiplier)}", pygame.font.SysFont("Fixedsys", 32),(0, 0, 0), (1063, 282), False)
     else:
         screen.blit(Menu1, (1000, 0))
-        text_draw(f"{diamond_format(math.floor(upgrades.get(4.1)*(1.75**(HouseMultiplier-1))))}",pygame.font.SysFont("Fixedsys", 26), (0, 0, 0), (1147, 124))
-        text_draw(f"{diamond_format(citizens.get(4.1) * HouseMultiplier)}+1", pygame.font.SysFont("Fixedsys", 26),(0, 0, 0), (1063, 134))
-        text_draw(f"{diamond_format(math.floor(upgrades.get(5.1)*(1.75**(GeneratorMultiplier-1))))}",pygame.font.SysFont("Fixedsys", 26), (0, 0, 0), (1147, 175))
-        text_draw(f"{diamond_format(citizens.get(5.1) * GeneratorMultiplier)}-1", pygame.font.SysFont("Fixedsys", 26),(136, 0, 21), (1063, 184))
-        text_draw(f"{diamond_format(math.floor(upgrades.get(6.1) * (1.75 ** (MinesMultiplier - 1))))}",pygame.font.SysFont("Fixedsys", 26), (0, 0, 0), (1147, 224))
-        text_draw(f"{diamond_format(citizens.get(6.1) * MinesMultiplier)}-5", pygame.font.SysFont("Fixedsys", 26),(136, 0, 21), (1063, 234))
-        text_draw(f"{diamond_format(math.floor(upgrades.get(7.1) * (1.75 ** (MhousesMultiplier - 1))))}",  pygame.font.SysFont("Fixedsys", 26), (0, 0, 0), (1147, 275))
-        text_draw(f"{diamond_format(citizens.get(7.1) * MhousesMultiplier)}+5", pygame.font.SysFont("Fixedsys", 26),(0, 0, 0), (1063, 284))
+        text_draw(screen, f"{diamond_format(math.floor(upgrades.get(4.1)*(1.75**(HouseMultiplier-1))))}",pygame.font.SysFont("Fixedsys", 26), (0, 0, 0), (1147, 124), False)
+        text_draw(screen, f"{diamond_format(citizens.get(4.1) * HouseMultiplier)}+1", pygame.font.SysFont("Fixedsys", 26),(0, 0, 0), (1063, 134), False)
+        text_draw(screen, f"{diamond_format(math.floor(upgrades.get(5.1)*(1.75**(GeneratorMultiplier-1))))}",pygame.font.SysFont("Fixedsys", 26), (0, 0, 0), (1147, 175), False)
+        text_draw(screen, f"{diamond_format(citizens.get(5.1) * GeneratorMultiplier)}-1", pygame.font.SysFont("Fixedsys", 26),(136, 0, 21), (1063, 184), False)
+        text_draw(screen, f"{diamond_format(math.floor(upgrades.get(6.1) * (1.75 ** (MinesMultiplier - 1))))}",pygame.font.SysFont("Fixedsys", 26), (0, 0, 0), (1147, 224), False)
+        text_draw(screen, f"{diamond_format(citizens.get(6.1) * MinesMultiplier)}-5", pygame.font.SysFont("Fixedsys", 26),(136, 0, 21), (1063, 234), False)
+        text_draw(screen, f"{diamond_format(math.floor(upgrades.get(7.1) * (1.75 ** (MhousesMultiplier - 1))))}",  pygame.font.SysFont("Fixedsys", 26), (0, 0, 0), (1147, 275), False)
+        text_draw(screen, f"{diamond_format(citizens.get(7.1) * MhousesMultiplier)}+5", pygame.font.SysFont("Fixedsys", 26),(0, 0, 0), (1063, 284), False)
 
     if ((round(selected_building) == 4 or round(selected_building) == 5) or round(selected_building) == 7) and build_mode:
         Water.set_alpha(150)
@@ -378,9 +410,10 @@ while running:
             pygame.mixer.music.play(1)
             print("music started")
             music_ended = False
-    text_draw(Citizens, pygame.font.SysFont("Fixedsys", 32), (0, 0, 0), (1130, 967))
-    text_draw(diamond_format(Diamonds), pygame.font.SysFont("Fixedsys", 32), (0, 0, 0), (1035, 967))
-
+    text_draw(screen, Citizens, pygame.font.SysFont("Fixedsys", 32), (0, 0, 0), (1130, 967), False)
+    text_draw(screen, diamond_format(Diamonds), pygame.font.SysFont("Fixedsys", 32), (0, 0, 0), (1035, 967), False)
+    create_ui((0, 0), (800, 100), (195, 195, 195, 200), (0, 0, 0, 200))
+    screen.blit(UI, (0, 0))
     pygame.display.flip()   # Also the base of everything
     clock.tick(60)
 # the closing sequence (who would have thought)
